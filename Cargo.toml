@@ -1,0 +1,9 @@
+[package]
+name = "fanotify"
+version = "0.1.0"
+authors = ["sebsoto <sebsoto32@gmail.com>"]
+description = "Fanotify bindings for the Rust programming language"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+libc = "0.2"
