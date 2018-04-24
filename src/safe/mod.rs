@@ -1,10 +1,17 @@
 extern crate libc;
 use sys;
 use std::io;
+use std::fs;
 
 pub struct Fanotify {
     pub fd: i32,
     blocking: bool,
+}
+#[derive(Debug)]
+pub struct FanotifyEv {
+    pub filename: String,
+    pub mask: u64,
+    pub fd: i32,
 }
 //Event types
 pub const FAN_ACCESS: u64 = 0x1;
@@ -23,6 +30,27 @@ pub const FAN_MARK_MOUNT: u32 = 0x00000010;
 pub const FAN_MARK_IGNORED_MASK: u32 = 0x00000020;
 pub const FAN_MARK_IGNORED_SURV_MODIFY: u32 = 0x00000040;
 pub const FAN_MARK_FLUSH: u32 = 0x00000080;
+impl FanotifyEv {
+    pub fn from_fanotify_event_metadata(meta: *const sys::fanotify_event_metadata) -> Result<FanotifyEv, io::Error> {
+        unsafe {
+            let proc_path = format!("/proc/self/fd/{}",(*meta).fd);
+            let filename = String::from(fs::read_link(proc_path)?.to_str().unwrap());
+            Ok(FanotifyEv {
+                filename: filename,
+                mask: (*meta).mask,
+                fd: (*meta).fd,
+            })
+        }
+    }
+}
+
+impl Drop for FanotifyEv {
+    fn drop(&mut self) {
+        unsafe {
+            sys::close(self.fd);
+        }
+    }
+}
 
 impl Fanotify {
     fn new(flags: u32, event_f_flags: u32) -> Result<Fanotify,io::Error> {
@@ -63,7 +91,7 @@ impl Fanotify {
             };
         };
     }
-    pub fn get_events(&self) -> Result<Vec<sys::fanotify_event_metadata>,io::Error>{
+    pub fn get_events(&self) -> Result<Vec<FanotifyEv>,io::Error>{
         let readable_bytes: libc::size_t = 0;
         unsafe {
             if libc::ioctl(self.fd,libc::FIONREAD,&readable_bytes as *const usize) < 0 {
@@ -78,10 +106,10 @@ impl Fanotify {
             if readbytes < 0 {
                 return Err(io::Error::last_os_error());
             }
-            let mut events: Vec<sys::fanotify_event_metadata> = Vec::with_capacity(readable_bytes); 
+            let mut events: Vec<FanotifyEv> = Vec::with_capacity(readable_bytes);
             let mut event = ptr as *const sys::fanotify_event_metadata;
             while sys::fan_event_ok(event, &mut readbytes) {
-                events.push((*event).clone());
+                events.push(FanotifyEv::from_fanotify_event_metadata(event).unwrap());
                 event = sys::fan_event_next(event,&mut readbytes);
             }
             return Ok(events);
