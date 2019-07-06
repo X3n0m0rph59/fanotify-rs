@@ -79,7 +79,10 @@ impl Fanotify {
     }
 
     pub fn new_blocking() -> Result<Fanotify, io::Error> {
-        match Fanotify::new(sys::FAN_CLASS_NOTIF | sys::FAN_UNLIMITED_QUEUE | sys::FAN_UNLIMITED_MARKS, 0) {
+        match Fanotify::new(
+            sys::FAN_CLASS_NOTIF | sys::FAN_UNLIMITED_QUEUE | sys::FAN_UNLIMITED_MARKS,
+            0,
+        ) {
             Ok(mut fnot) => {
                 fnot.blocking = true;
                 return Ok(fnot);
@@ -90,7 +93,10 @@ impl Fanotify {
     }
 
     pub fn new_nonblocking() -> Result<Fanotify, io::Error> {
-        Fanotify::new(sys::FAN_NONBLOCK | sys::FAN_UNLIMITED_QUEUE | sys::FAN_UNLIMITED_MARKS, 0)
+        Fanotify::new(
+            sys::FAN_NONBLOCK | sys::FAN_UNLIMITED_QUEUE | sys::FAN_UNLIMITED_MARKS,
+            0,
+        )
     }
 
     pub fn add_filesystem(&self, event_mask: u64, path: String) -> Result<(), io::Error> {
@@ -177,7 +183,7 @@ impl Fanotify {
                 events.push(FanotifyEv::from_fanotify_event_metadata(event).unwrap());
                 event = sys::fan_event_next(event, &mut readbytes);
             }
-            
+
             return Ok(events);
         };
     }
