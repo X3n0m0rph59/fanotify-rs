@@ -30,6 +30,7 @@ pub const FAN_MARK_REMOVE: u32 = 0x00000002;
 pub const FAN_MARK_DONT_FOLLOW: u32 = 0x00000004;
 pub const FAN_MARK_ONLYDIR: u32 = 0x00000008;
 pub const FAN_MARK_MOUNT: u32 = 0x00000010;
+pub const FAN_MARK_FILESYSTEM: u32 = 0x00000100;
 pub const FAN_MARK_IGNORED_MASK: u32 = 0x00000020;
 pub const FAN_MARK_IGNORED_SURV_MODIFY: u32 = 0x00000040;
 pub const FAN_MARK_FLUSH: u32 = 0x00000080;
@@ -90,6 +91,21 @@ impl Fanotify {
 
     pub fn new_nonblocking() -> Result<Fanotify, io::Error> {
         Fanotify::new(sys::FAN_NONBLOCK | sys::FAN_UNLIMITED_QUEUE | sys::FAN_UNLIMITED_MARKS, 0)
+    }
+
+    pub fn add_filesystem(&self, event_mask: u64, path: String) -> Result<(), io::Error> {
+        unsafe {
+            match sys::fanotify_mark(
+                self.fd,
+                FAN_MARK_ADD | FAN_MARK_FILESYSTEM,
+                event_mask,
+                AT_FDCWD,
+                path.as_ptr() as *const _,
+            ) {
+                0 => return Ok(()),
+                _ => return Err(io::Error::last_os_error()),
+            };
+        };
     }
 
     pub fn add_mount(&self, event_mask: u64, path: String) -> Result<(), io::Error> {

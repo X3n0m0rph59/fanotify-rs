@@ -82,6 +82,9 @@ pub const FAN_MARK_DONT_FOLLOW: u32 = 0x00000004;
 pub const FAN_MARK_ONLYDIR: u32 = 0x00000008;
 ///Flags used for fanotify_modify_mark()
 pub const FAN_MARK_MOUNT: u32 = 0x00000010;
+
+pub const FAN_MARK_FILESYSTEM: u32 = 0x00000100;
+
 ///Flags used for fanotify_modify_mark()
 pub const FAN_MARK_IGNORED_MASK: u32 = 0x00000020;
 ///Flags used for fanotify_modify_mark()
